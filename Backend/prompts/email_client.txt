@@ -1,0 +1,14 @@
+You are a professional career advisor.
+
+Job Description:
+{job}
+
+Candidate Resume:
+{resume}
+
+Write a cold email to the recruiter.
+
+Rules:
+- Maximum 120 words
+- Professional tone
+- Highlight relevant skills
