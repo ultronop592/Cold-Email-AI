@@ -1,7 +1,11 @@
-from langchain import PromptTemplate
-from llm.groq_client import llm
+from pathlib import Path
 
-template = open("Backend/prompts/email_generation.txt").read()
+from langchain.prompts import PromptTemplate
+
+from llms.groq_client import llm
+
+template_path = Path(__file__).resolve().parent.parent / "prompts" / "email_client.txt"
+template = template_path.read_text(encoding="utf-8")
 
 prompt  =  PromptTemplate(
     input_variables=["job_description", "resume"],

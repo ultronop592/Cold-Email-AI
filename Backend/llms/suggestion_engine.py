@@ -1,6 +1,6 @@
 
 from langchain.prompts import PromptTemplate
-from llm.groq_client import llm
+from llms.groq_client import llm
 
 template = """
 Compare the job requirements with the candidate profile.

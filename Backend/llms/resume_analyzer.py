@@ -1,5 +1,5 @@
 from langchain.prompts import PromptTemplate
-from llm.groq_client import llm
+from llms.groq_client import llm
 
 template = """
 Extract information from this resume.
