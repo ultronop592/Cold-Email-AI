@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from llms.groq_client import llm
 
