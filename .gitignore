@@ -1,1 +1,53 @@
-Backend/.env 
+# ------------------------------
+# Environment and secrets
+# ------------------------------
+Backend/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# ------------------------------
+# Python backend
+# ------------------------------
+.venv/
+Backend/venv/
+Backend/__pycache__/
+Backend/**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+
+# ------------------------------
+# Node / Next.js frontend
+# ------------------------------
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.pnpm-debug.log*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/*.tsbuildinfo
+
+# ------------------------------
+# OS / editor noise
+# ------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# Temporary files
+# ------------------------------
+*.log
+*.tmp
+*.temp

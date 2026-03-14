@@ -8,7 +8,7 @@ template_path = Path(__file__).resolve().parent.parent / "prompts" / "email_clie
 template = template_path.read_text(encoding="utf-8")
 
 prompt  =  PromptTemplate(
-    input_variables=["job_description", "resume"],
+    input_variables=["job", "resume"],
     template=template
 
 )
@@ -18,7 +18,7 @@ chain = prompt | llm
 def generate_email(job, resume):
     
     response = chain.invoke({
-        "job_description": job,
+        "job": job,
         "resume": resume
     })
     
