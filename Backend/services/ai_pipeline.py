@@ -1,35 +1,43 @@
 from services.job_scraper import scrape_jobs
 from services.resume_parser import parse_resume
+from services.scorer import build_score_dashboard
+from llms.combined_analyzer import analyze_job_and_resume
 
-from llms.job_analyzer import analyze_job
-from llms.resume_analyzer import analyze_resume
-from llms.email_generation import generate_email
-from llms.suggestion_engine import generate_suggestions
+
+def truncate(text, max_chars=3000):
+    """Prevent token overflow by trimming long texts"""
+    return text[:max_chars] if len(text) > max_chars else text
 
 
 def run_pipeline(job_url, resume_file):
 
     # Step 1: Scrape job description
-    job_description = scrape_jobs(job_url)
+    job_description = truncate(scrape_jobs(job_url))
 
     # Step 2: Parse resume
-    resume_text = parse_resume(resume_file)
+    resume_text = truncate(parse_resume(resume_file), max_chars=2000)
 
-    # Step 3: Analyze job description
-    job_info = analyze_job(job_description)
+    # Single API call for analysis + best email
+    analysis = analyze_job_and_resume(
+        job=job_description,
+        resume=resume_text,
+        company_text=""
+    )
 
-    # Step 4: Analyze resume
-    resume_info = analyze_resume(resume_text)
-
-    # Step 5: Generate email
-    email_content = generate_email(job_description, resume_text)
-
-    # Step 6: Generate suggestions
-    suggestions = generate_suggestions(job_info, resume_info)
+    # Pure Python score computation
+    score_dashboard = build_score_dashboard(
+        resume_text=resume_text,
+        job_text=job_description,
+        tone_profile=analysis.get("tone_profile"),
+        variants=[{"email": analysis.get("email", "")}],
+        match_score=analysis["match_score"],
+        resume_score=analysis["resume_score"]
+    )
 
     return {
-        "email": email_content,
-        "suggestions": suggestions,
-        "job_analysis": job_info,
-        "resume_analysis": resume_info
+        "email": analysis.get("email", ""),
+        "suggestion_text": analysis.get("suggestion_text", ""),
+        "tips": analysis.get("tips", []),
+        "score_dashboard": score_dashboard,
+        "missing_skills": analysis.get("missing_skills", [])
     }

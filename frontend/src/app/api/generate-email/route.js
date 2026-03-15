@@ -34,9 +34,18 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
 
+    // Forward the real client IP so the backend rate limiter works per-user
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+
     const response = await fetch(`${BACKEND_BASE_URL}/generate-email`, {
       method: "POST",
       body: formData,
+      headers: {
+        "X-Forwarded-For": clientIp,
+      },
     });
 
     const responseText = await response.text();

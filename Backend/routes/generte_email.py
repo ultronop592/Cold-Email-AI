@@ -1,21 +1,21 @@
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Form, File, UploadFile, Request
+from services.rate_limiter import check_rate_limit
 from services.ai_pipeline import run_pipeline
 
 router = APIRouter()
 
 @router.post("/generate-email")
-
-async def generate(
+async def generate_email(
+    request: Request,
     job_url: str = Form(...),
-    resume: UploadFile = File(...),
+    resume: UploadFile = File(...)
 ):
-    try:
-        result = run_pipeline(
-            job_url,
-            resume.file
-        )
-        return result
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Pipeline failed: {exc}") from exc
+    # Get real client IP — check X-Forwarded-For first (set by Next.js proxy),
+    # then fall back to direct connection IP
+    forwarded = request.headers.get("x-forwarded-for")
+    client_ip = forwarded.split(",")[0].strip() if forwarded else request.client.host
+    check_rate_limit(client_ip)
+
+    # Rest of your existing code
+    result = run_pipeline(job_url, resume.file)
+    return result

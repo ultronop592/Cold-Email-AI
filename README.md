@@ -1,26 +1,28 @@
 # Cold Email AI
 
-Cold Email AI helps job seekers generate a tailored cold email from a job posting URL and a resume PDF.
+Cold Email AI generates a tailored cold outreach email from:
+- A job posting URL
+- A candidate resume PDF
 
-It includes:
-- A FastAPI backend for scraping, parsing, and AI generation.
-- A Next.js frontend test console to upload a resume, submit a job URL, and view generated outputs.
+It provides:
+- A FastAPI backend for scraping, parsing, generation, and scoring
+- A Next.js frontend test console for end-to-end validation
 
-## What This Project Does
+## Current Behavior (Important)
 
-Given a `job_url` and a resume PDF, the system:
-1. Scrapes text from the job page.
-2. Extracts text from the uploaded resume PDF.
-3. Analyzes the job details.
-4. Analyzes the resume profile.
-5. Generates a cold outreach email.
-6. Suggests profile improvements and missing skills.
+The backend currently runs in a simplified, low-latency mode:
+1. Scrape job text from URL
+2. Parse resume PDF text
+3. Make one LLM call for combined analysis + email generation
+4. Compute score dashboard in Python
+5. Return only email, improvements text, tips, scores, and missing skills
 
-The API response includes:
+The active API response keys are:
 - `email`
-- `suggestions`
-- `job_analysis`
-- `resume_analysis`
+- `suggestion_text`
+- `tips`
+- `score_dashboard`
+- `missing_skills`
 
 ## Project Structure
 
@@ -28,9 +30,22 @@ The API response includes:
 Cold Email Product/
   Backend/
     app/
+      main.py
     routes/
+      generte_email.py
     services/
+      ai_pipeline.py
+      job_scraper.py
+      resume_parser.py
+      scorer.py
+      memory_services.py
+      reasoning_builder.py
     llms/
+      groq_client.py
+      combined_analyzer.py
+      variants_generator.py
+    db/
+      chroma_client.py
     prompts/
     requirement.txt
   frontend/
@@ -42,33 +57,60 @@ Cold Email Product/
 
 ### Backend
 - Python
-- FastAPI
-- Uvicorn
-- LangChain + langchain-groq
-- Groq LLM API
-- ChromaDB
-- sentence-transformers
-- requests + BeautifulSoup4 (job page scraping)
+- FastAPI + Uvicorn
+- LangChain Core + langchain-groq
+- Groq LLM API (`GROQ_MODEL`, default: `llama-3.3-70b-versatile`)
+- requests + BeautifulSoup4 (job scraping)
 - pdfplumber (resume PDF parsing)
 - python-dotenv
 - python-multipart
+- ChromaDB + sentence-transformers (memory/semantic modules present)
 
 ### Frontend
 - Next.js (App Router)
 - React
-- ESLint
 
-## Architecture (High-Level)
+## Backend Concepts
+
+### Active request path
+- `Backend/routes/generte_email.py`
+  - Exposes `POST /generate-email`
+  - Accepts `job_url` as `Form(...)` and `resume` as `File(...)`
+- `Backend/services/ai_pipeline.py`
+  - Orchestrates scrape -> parse -> analyze -> score
+  - Uses a single LLM call for speed
+- `Backend/llms/combined_analyzer.py`
+  - Prompts the model for structured JSON output
+  - Produces polished cold email format (greeting, opening, body, CTA, signoff)
+  - Returns plain-text improvement block and quick tips
+  - Sanitizes control characters before JSON parse
+- `Backend/services/scorer.py`
+  - Builds score dashboard with breakdown (match, ATS, resume, tone, overall)
+
+### Supporting modules present in repository
+- `Backend/services/memory_services.py`
+  - Save/retrieve similar historical runs using ChromaDB
+- `Backend/services/reasoning_builder.py`
+  - Builds explainability/reasoning summaries from analysis outputs
+- `Backend/llms/variants_generator.py`
+  - Generates multi-style email variants with strategy reasoning
+- `Backend/db/chroma_client.py`
+  - Persistent ChromaDB collection setup
+
+Note: these advanced modules exist and are useful for expanded workflows, but they are not in the current active low-latency response path.
+
+## High-Level Architecture
 
 1. Frontend form sends multipart data to `frontend/src/app/api/generate-email/route.js`.
-2. Frontend API route proxies request to backend `POST /generate-email`.
-3. Backend route calls `run_pipeline()` in `Backend/services/ai_pipeline.py`.
-4. Pipeline returns generated email + analyses + suggestions.
-5. Frontend renders results in the test console UI.
+2. Frontend proxy forwards to backend `POST /generate-email`.
+3. Backend route calls `run_pipeline()`.
+4. Pipeline returns minimal payload for fast UI rendering.
+5. Frontend displays cold email, plain-text improvements, and score cards.
 
 ## Environment Variables
 
 ### Backend (`Backend/.env`)
+
 Create `Backend/.env`:
 
 ```env
@@ -78,6 +120,7 @@ GROQ_API_KEY=your_groq_api_key_here
 ```
 
 ### Frontend (`frontend/.env.local`)
+
 Optional (defaults to local backend):
 
 ```env
@@ -86,14 +129,7 @@ BACKEND_API_URL=http://127.0.0.1:8000
 
 ## Setup
 
-### 1. Clone and open project
-
-```bash
-git clone https://github.com/ultronop592/Cold-Email-AI.git
-cd Cold-Email-AI
-```
-
-### 2. Backend setup
+### 1. Create virtual environment
 
 From project root:
 
@@ -101,7 +137,7 @@ From project root:
 python -m venv .venv
 ```
 
-Activate virtual environment:
+Activate it:
 
 ```bash
 # Windows PowerShell
@@ -111,13 +147,13 @@ Activate virtual environment:
 source .venv/bin/activate
 ```
 
-Install dependencies:
+### 2. Install backend dependencies
 
 ```bash
 pip install -r Backend/requirement.txt
 ```
 
-### 3. Frontend setup
+### 3. Install frontend dependencies
 
 ```bash
 cd frontend
@@ -125,22 +161,21 @@ npm install
 cd ..
 ```
 
-## Run the Application
+## Run
 
 Open two terminals from project root.
 
-### Terminal A: Run backend
+### Terminal A (Backend)
 
 ```bash
-# Ensure venv is active first
 python -m uvicorn app.main:app --app-dir Backend --host 127.0.0.1 --port 8000
 ```
 
-Backend endpoints:
-- API docs: `http://127.0.0.1:8000/docs`
-- Main generation endpoint: `POST /generate-email`
+Backend URLs:
+- Docs: `http://127.0.0.1:8000/docs`
+- Endpoint: `POST /generate-email`
 
-### Terminal B: Run frontend
+### Terminal B (Frontend)
 
 ```bash
 cd frontend
@@ -150,43 +185,47 @@ npm run dev
 Frontend URL:
 - `http://127.0.0.1:3000`
 
-## How to Use
-
-1. Open `http://127.0.0.1:3000`.
-2. Enter a job post URL.
-3. Upload resume PDF.
-4. Click `Test API`.
-5. Review generated email, suggestions, and analyses.
-
 ## API Contract
 
 ### `POST /generate-email`
 
 Request: `multipart/form-data`
 - `job_url` (string, required)
-- `resume` (file, required)
+- `resume` (PDF file, required)
 
 Response: `application/json`
 
 ```json
 {
-  "email": "...",
-  "suggestions": "...",
-  "job_analysis": "...",
-  "resume_analysis": "..."
+  "email": "Hi Hiring Team,\n\n...\n\nBest regards,\nCandidate",
+  "suggestion_text": "Improvements:\n- ...\n- ...\n\nQuick Tips:\n- ...\n- ...",
+  "tips": ["...", "...", "..."],
+  "score_dashboard": {
+    "overall_score": 78,
+    "overall_label": "Good",
+    "breakdown": {
+      "match_score": { "score": 80 },
+      "ats_score": { "score": 75 },
+      "resume_score": { "score": 79 },
+      "tone_score": { "score": 76 }
+    }
+  },
+  "missing_skills": ["skill_a", "skill_b"]
 }
 ```
 
-## Notes and Troubleshooting
+## Troubleshooting
 
-- If you get `422 Unprocessable Content`, ensure request is multipart with both `job_url` and `resume`.
-- If you get model errors from Groq, set `GROQ_MODEL` in `Backend/.env` to a currently supported model.
-- Some job portals may block scraping or require authentication; try accessible job URLs.
-- If SSL certificate verification fails while scraping, the backend includes a fallback path for local development.
+- `422 Unprocessable Content`
+  - Ensure request is multipart and includes both `job_url` and `resume`.
+- Groq model/deprecation errors
+  - Set `GROQ_MODEL` in `Backend/.env` to a currently supported model.
+- Scraping failures on some job links
+  - Some sites block bots or require auth; test with publicly accessible job pages.
+- SSL verification issues during scrape
+  - The scraper includes a fallback path for local/dev robustness.
 
-## Future Improvements
+## Notes
 
-- Structured JSON outputs for analysis fields.
-- Better scraping adapters per job platform (LinkedIn, Indeed, etc.).
-- Authentication and usage limits.
-- Docker setup for one-command local startup.
+- The route file name is `generte_email.py` (current repository naming).
+- The backend is optimized for response speed by reducing LLM calls to one per request.

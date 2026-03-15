@@ -9,3 +9,4 @@ beautifulsoup4
 pdfplumber
 python-dotenv
 python-multipart
+langchain-core
