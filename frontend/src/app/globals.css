@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
 @layer base {
   :root {
     --background: #F5F1E8;
@@ -14,6 +18,8 @@
 
   body {
     @apply bg-[var(--background)] text-[var(--foreground)] antialiased overflow-x-hidden selection:bg-neutral-200 selection:text-neutral-900;
+    font-family: var(--font-mono);
+    letter-spacing: -0.01em;
   }
 }
 

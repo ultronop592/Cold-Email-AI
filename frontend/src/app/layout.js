@@ -1,9 +1,10 @@
-import { Outfit } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 export const metadata = {
@@ -14,7 +15,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} font-sans`}>{children}</body>
+      <body className={`${jetbrainsMono.variable} font-mono`}>{children}</body>
     </html>
   );
 }

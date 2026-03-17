@@ -182,11 +182,11 @@ function VariantCard({ variant, index }) {
 function MetricCard({ label, value, helper, icon: Icon, delay }) {
   return (
     <article 
-      className="bg-white border border-[#E8E2D6] p-6 rounded-2xl flex flex-col gap-2 relative overflow-hidden group hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+      className="bg-white border border-[#E8E2D6] p-6 rounded-2xl flex flex-col gap-2 relative overflow-hidden group hover:shadow-md hover:border-[#DA7756]/30 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center gap-2 text-neutral-500 mb-2 z-10">
-        <Icon size={16} />
+        <Icon size={16} className="text-[#DA7756]" />
         <p className="text-[11px] font-bold uppercase tracking-widest">{label}</p>
       </div>
       <strong className="text-3xl font-bold text-neutral-900 tracking-tight z-10">{value ?? "-"}</strong>
@@ -261,17 +261,17 @@ export default function Home() {
   const isReady = mounted;
 
   return (
-    <div className="min-h-screen bg-[#F5F1E8] text-neutral-900 font-sans selection:bg-neutral-200">
+    <div className="min-h-screen bg-[#F5F1E8] text-neutral-900 selection:bg-[#DA7756]/20">
       
       {/* SaaS Landing Page Hero Section */}
       <section className="container mx-auto px-4 pt-24 pb-16 flex flex-col items-center text-center max-w-[900px]">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#E8E2D6] text-xs font-semibold text-neutral-600 mb-8 shadow-sm">
-          <Sparkles size={14} className="text-neutral-400" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#DA7756]/20 text-xs font-semibold text-neutral-600 mb-8 shadow-sm">
+          <Sparkles size={14} className="text-[#DA7756]" />
           <span>Cold Email Generator AI</span>
         </div>
         
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-neutral-900 mb-6 leading-[1.15]">
-          Generate High-Converting <br className="hidden md:block" /> Cold Emails in Seconds
+          Generate <span className="text-[#DA7756]">High-Converting</span> <br className="hidden md:block" /> Cold Emails in Seconds
         </h1>
         
         <p className="text-lg md:text-xl text-neutral-600 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
@@ -280,7 +280,7 @@ export default function Home() {
 
         <div className="flex flex-wrap justify-center gap-3 max-w-3xl">
           {pillTags.map((tag, i) => (
-            <div key={i} className="px-4 py-2 rounded-full bg-[#E8E2D6] text-sm text-neutral-700 font-medium transition-colors hover:bg-[#DED7C8] cursor-default">
+            <div key={i} className="px-4 py-2 rounded-full bg-[#E8E2D6] text-sm text-neutral-700 font-medium transition-colors hover:bg-[#DA7756]/15 hover:text-[#DA7756] cursor-default">
               {tag}
             </div>
           ))}
@@ -296,7 +296,7 @@ export default function Home() {
             <div className="glass-panel-light p-8 rounded-3xl relative">
               <div className="mb-6">
                 <h3 className="text-lg font-bold flex items-center gap-2 mb-1 text-neutral-900">
-                  <BrainCircuit size={20} className="text-neutral-500" />
+                  <BrainCircuit size={20} className="text-[#DA7756]" />
                   Campaign Setup
                 </h3>
                 <p className="text-sm text-neutral-500">Provide context for the AI.</p>
@@ -315,19 +315,19 @@ export default function Home() {
                       value={jobUrl}
                       onChange={(e) => setJobUrl(e.target.value)}
                       required
-                      className="w-full pl-10 pr-4 py-3.5 bg-white border border-[#E8E2D6] rounded-xl focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 outline-none transition-all placeholder:text-neutral-400 text-sm shadow-sm"
+                      className="w-full pl-10 pr-4 py-3.5 bg-white border border-[#E8E2D6] rounded-xl focus:ring-2 focus:ring-[#DA7756]/40 focus:border-[#DA7756] outline-none transition-all placeholder:text-neutral-400 text-sm shadow-sm"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-neutral-600">Resume PDF</label>
-                  <label className={`relative cursor-pointer flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all ${resumeFile ? 'border-neutral-900 bg-neutral-50' : 'border-[#E8E2D6] bg-white hover:bg-neutral-50 hover:border-neutral-300'}`}>
+                  <label className={`relative cursor-pointer flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all ${resumeFile ? 'border-[#DA7756] bg-[#DA7756]/5' : 'border-[#E8E2D6] bg-white hover:bg-neutral-50 hover:border-[#DA7756]/40'}`}>
                     <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
                       {resumeFile ? (
                          <>
-                          <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mb-3">
-                            <FileText size={24} className="text-neutral-900" />
+                          <div className="w-12 h-12 rounded-full bg-[#DA7756]/10 flex items-center justify-center mb-3">
+                            <FileText size={24} className="text-[#DA7756]" />
                           </div>
                           <p className="text-sm font-semibold text-neutral-900 truncate max-w-[200px] px-2">{resumeFile.name}</p>
                           <p className="text-xs text-neutral-500 mt-1">Attached for context</p>
@@ -355,7 +355,7 @@ export default function Home() {
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className={`mt-2 w-full py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${loading ? 'bg-[#E8E2D6] text-neutral-500 cursor-not-allowed' : 'bg-neutral-900 text-white hover:bg-neutral-800 shadow-lg hover:shadow-xl hover:-translate-y-0.5'}`}
+                  className={`mt-2 w-full py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${loading ? 'bg-[#E8E2D6] text-neutral-500 cursor-not-allowed' : 'bg-[#DA7756] text-white hover:bg-[#C4694D] shadow-lg hover:shadow-xl hover:-translate-y-0.5'}`}
                 >
                   {loading ? (
                     <>
@@ -395,8 +395,8 @@ export default function Home() {
             <div id="results-section" className={`glass-panel-light rounded-3xl min-h-[500px] flex flex-col relative transition-all duration-500`}>
                {!result && !loading && (
                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 text-neutral-500">
-                   <div className="w-20 h-20 rounded-full bg-white border border-[#E8E2D6] shadow-sm flex items-center justify-center mb-6">
-                     <Lightbulb size={32} className="text-neutral-400" />
+                   <div className="w-20 h-20 rounded-full bg-[#DA7756]/10 border border-[#DA7756]/20 shadow-sm flex items-center justify-center mb-6">
+                     <Lightbulb size={32} className="text-[#DA7756]" />
                    </div>
                    <h3 className="text-lg font-bold mb-2 text-neutral-900">Ready to Draft</h3>
                    <p className="max-w-md leading-relaxed">Provide your target job and context document. The engine will instantly write two strategic cold email variants.</p>
@@ -405,8 +405,8 @@ export default function Home() {
 
                {loading && (
                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-20 rounded-3xl">
-                   <div className="w-16 h-16 rounded-full border-4 border-[#E8E2D6] border-t-neutral-900 animate-spin mb-6"></div>
-                   <p className="text-sm font-semibold text-neutral-900 tracking-widest uppercase">Analyzing Profile & Writing...</p>
+                   <div className="w-16 h-16 rounded-full border-4 border-[#DA7756]/20 border-t-[#DA7756] animate-spin mb-6"></div>
+                   <p className="text-sm font-semibold text-[#DA7756] tracking-widest uppercase">Analyzing Profile & Writing...</p>
                  </div>
                )}
 
@@ -419,7 +419,7 @@ export default function Home() {
                      </div>
                      <div className="text-right bg-[#F5F1E8] px-4 py-2 rounded-xl">
                        <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Effectiveness</div>
-                       <div className="text-3xl font-black text-neutral-900 leading-none">{result.score_dashboard?.overall_score || "N/A"}</div>
+                       <div className="text-3xl font-black text-[#DA7756] leading-none">{result.score_dashboard?.overall_score || "N/A"}</div>
                      </div>
                    </div>
 
