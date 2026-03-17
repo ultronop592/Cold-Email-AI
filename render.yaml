@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: cold-email-ai-backend
+    env: docker
+    region: ohio
+    plan: free # Change to starter/standard if needed for more resources (ChromaDB/PDF processing can be memory intensive)
+    healthCheckPath: /
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false # You must set this manually in the Render dashboard!
+      - key: GROQ_MODEL
+        value: "llama-3.3-70b-versatile"
+      - key: PORT
+        value: "8000"
+    dockerCommand: "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    
+    # Optional: If you want to persist the ChromaDB database across deployments, 
+    # you can uncomment the disk configuration, but note that disks require a paid plan.
+    # disk:
+    #   name: chromadb-data
+    #   mountPath: /app/chroma_db
+    #   sizeGB: 1

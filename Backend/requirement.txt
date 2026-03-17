@@ -2,11 +2,12 @@ fastapi
 uvicorn
 langchain
 langchain-groq
-chromadb
-sentence-transformers
+langchain-core
+langchain-community
 requests
 beautifulsoup4
 pdfplumber
 python-dotenv
 python-multipart
-langchain-core
+chromadb
+onnxruntime

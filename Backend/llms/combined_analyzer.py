@@ -1,101 +1,64 @@
 import json
 from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 from llms.groq_client import llm
+from llms.schemas import CombinedAnalysis
+
+parser = JsonOutputParser(pydantic_object=CombinedAnalysis)
 
 COMBINED_TEMPLATE = """
-You are an elite outreach strategist and cold-email copywriter. Your emails
-have an average 45 % open rate and 12 % reply rate because you follow these
-principles religiously.
+You are an elite outreach strategist, cold-email copywriter, and hiring-fit analyst.
 
-═══════════════════════════════════════════════
- YOUR TASK
-═══════════════════════════════════════════════
-Given the JOB DESCRIPTION and CANDIDATE RESUME below, do TWO things:
-1. Analyze the fit between the candidate and the role.
-2. Write a single, outstanding cold email the candidate can send to the
-   hiring manager. The email must feel like a real person wrote it, not AI.
+You will receive a JOB DESCRIPTION, CANDIDATE RESUME, and optional COMPANY PAGE TEXT.
+Do THREE things:
 
-═══════════════════════════════════════════════
- COLD EMAIL WRITING RULES (follow every single one)
-═══════════════════════════════════════════════
+━━━ TASK 1: ANALYZE FIT ━━━
+Produce deep analysis of job requirements vs candidate qualifications:
+- job_analysis: role title, company name, key_skills_required (list), experience_level
+- resume_analysis: candidate_name (real name from resume), strongest_skills (list), experience_years
+- tone_profile: formality (formal/semi-formal/casual), personality traits (list), vocabulary (technical/mixed/simple), example_phrases from company page
+- match_score: 0-100 how well candidate fits this specific role
+- resume_score: 0-100 overall resume strength for this role
+- missing_skills: list of skills in job not found in resume
+- suggestion_text: 2-3 bullet-point improvements the candidate should make
+- tips: 3 quick actionable tips
 
-STRUCTURE (4 parts, strict order):
-  1. HOOK (1 sentence)  — Open with something specific about the company,
-     their product, a recent news item, or a genuine observation.  NEVER
-     open with "I am writing to…", "I came across…", "I hope this email
-     finds you well", or any generic filler.
-  2. VALUE BRIDGE (2-3 sentences) — Connect exactly 2-3 of the candidate's
-     strongest skills, projects, or measurable achievements DIRECTLY to
-     what the job description asks for.  Use concrete numbers or outcomes
-     when available (e.g., "reduced build time by 40 %", "shipped a feature
-     used by 10 k+ users").
-  3. CURIOSITY GAP (1 sentence) — Tease a specific idea, insight, or
-     relevant project that would make the reader want to learn more.
-  4. CALL TO ACTION (1 sentence) — End with a single, low-friction ask:
-     a 15-min call, a quick coffee chat, or "happy to share more details".
+━━━ TASK 2: REASON ABOUT SCORES ━━━
+Provide analysis_reasoning with:
+- overall_assessment: one sentence summary of candidate-job fit
+- biggest_strength: the candidate's single strongest selling point for this role
+- biggest_gap: the most important skill or experience the candidate lacks
+- why_this_match_score: explain why you gave this match_score
+- why_this_resume_score: explain why you gave this resume_score
 
-STYLE RULES:
-  • Total email length: 80-130 words.  Shorter is better.
-  • Tone: confident but not arrogant, friendly but not casual, concise
-    but not robotic.
-  • Use the hiring manager's first name if it can be inferred; otherwise
-    use the company name or "Hi there".
-  • Use the candidate's REAL name from the resume for the sign-off.
-  • NO subject line — only the body.
-  • NO bullet lists in the email — flowing sentences only.
-  • NO buzzwords like "synergy", "leverage", "passionate".  Use plain,
-    vivid English.
-  • DO mention the company name and exact role title at least once.
-  • Each paragraph should be 1-2 sentences MAX. White-space is your friend.
+━━━ TASK 3: WRITE PRIMARY EMAIL ━━━
+Write one outstanding cold email the candidate can send.
 
-ANTI-PATTERNS TO AVOID:
-  ✗ Starting with "Dear Hiring Manager"
-  ✗ Repeating the entire job description back
-  ✗ Generic flattery like "your company is amazing"
-  ✗ Listing skills without context or proof
-  ✗ Long paragraphs or wall-of-text
-  ✗ Overly formal or stiff language
+EMAIL STRUCTURE (follow this exact order):
+1. HOOK (1 sentence) — Open with something specific about the company, their product, a recent achievement, or the role itself. NEVER start with "I am writing to", "I hope this finds you well", or "I came across your posting".
+2. VALUE BRIDGE (2-3 sentences) — Connect 2-3 candidate skills directly to job needs. Use real numbers from resume (e.g., "reduced latency by 35%", "shipped to 50k users").
+3. CURIOSITY GAP (1 sentence) — Tease a relevant idea, project, or insight that makes the reader want to learn more.
+4. CALL TO ACTION (1 sentence) — One low-friction ask: 15-min call, coffee chat, or "happy to share more details."
 
-═══════════════════════════════════════════════
- OUTPUT FORMAT
-═══════════════════════════════════════════════
-Return ONLY a valid JSON object.  No markdown fences. No commentary.
+EMAIL STYLE RULES:
+- 80-130 words total. Shorter is better.
+- Confident but not arrogant; friendly but not casual.
+- No bullet lists in the email body — flowing sentences only.
+- No buzzwords: "synergy", "leverage", "passionate", "excited to apply".
+- Use candidate's REAL NAME from resume for sign-off.
+- Mention company name and exact role title at least once.
+- Each paragraph: 1-2 sentences MAX.
 
-{{
-    "email": "<the full cold email body exactly as the candidate should send it — with paragraph breaks as newlines>",
-    "email_format": {{
-        "greeting": "<greeting line, e.g. Hi Sarah,>",
-        "opening": "<the hook sentence tied to company/role>",
-        "body": "<the value bridge: 2-3 sentences connecting resume highlights to job needs, with numbers>",
-        "cta": "<one clear, low-friction call-to-action>",
-        "signoff": "<sign-off with candidate's real name>"
-    }},
-    "job_analysis": {{
-        "role": "<exact job title from the posting>",
-        "company": "<company name if found, else Unknown>",
-        "key_skills_required": ["skill1", "skill2", "skill3"],
-        "experience_level": "<junior or mid or senior>"
-    }},
-    "resume_analysis": {{
-        "candidate_name": "<full name from resume, else Candidate>",
-        "strongest_skills": ["skill1", "skill2", "skill3"],
-        "experience_years": "<estimated total years as a number>"
-    }},
-    "tone_profile": {{
-        "formality": "<casual or semi-formal or formal>",
-        "personality": ["<trait1>", "<trait2>"],
-        "vocabulary": "<simple or technical or mixed>"
-    }},
-    "match_score": <0-100 integer — how well the resume matches the job requirements>,
-    "resume_score": <0-100 integer — overall strength of the resume for this specific role>,
-    "missing_skills": ["<important skill in job desc but absent from resume>"],
-    "suggestion_text": "<plain text only. Start with 'Improvements:' then 3-5 bullet points on how the candidate can strengthen their application. End with 'Quick Tips:' and 3 actionable tips.>",
-    "tips": ["<tip1>", "<tip2>", "<tip3>"]
-}}
+EMAIL ANTI-PATTERNS (never do these):
+✗ "Dear Hiring Manager" — find a better greeting
+✗ Repeating the job description back word-for-word
+✗ Generic flattery ("your company is amazing")
+✗ Listing skills without proof, numbers, or context
+✗ Wall-of-text paragraphs longer than 2 sentences
 
-═══════════════════════════════════════════════
- INPUTS
-═══════════════════════════════════════════════
+Return email_format with: greeting, opening, body, cta, signoff as separate fields.
+
+{format_instructions}
 
 JOB DESCRIPTION:
 {job}
@@ -103,99 +66,71 @@ JOB DESCRIPTION:
 RESUME:
 {resume}
 
-COMPANY PAGE TEXT (may be empty if unavailable):
+COMPANY PAGE TEXT:
 {company_text}
 """
 
 prompt = PromptTemplate(
+    template=COMBINED_TEMPLATE,
     input_variables=["job", "resume", "company_text"],
-    template=COMBINED_TEMPLATE
+    partial_variables={
+        "format_instructions": parser.get_format_instructions()
+    }
 )
 
-chain = prompt | llm
-
-
-def _escape_control_chars_in_strings(text):
-    """Escape literal newlines/tabs inside JSON string values."""
-    result = []
-    in_string = False
-    escape = False
-
-    for ch in text:
-        if in_string:
-            if escape:
-                result.append(ch)
-                escape = False
-                continue
-
-            if ch == "\\":
-                result.append(ch)
-                escape = True
-                continue
-
-            if ch == '"':
-                result.append(ch)
-                in_string = False
-                continue
-
-            if ch == "\n":
-                result.append("\\n")
-                continue
-
-            if ch == "\r":
-                result.append("\\r")
-                continue
-
-            if ch == "\t":
-                result.append("\\t")
-                continue
-
-            result.append(ch)
-            continue
-
-        result.append(ch)
-        if ch == '"':
-            in_string = True
-
-    return "".join(result)
+chain = prompt | llm | parser
 
 
 def analyze_job_and_resume(job, resume, company_text=""):
-    response = chain.invoke({
-        "job": job,
-        "resume": resume,
-        "company_text": company_text if company_text else "Not available"
-    })
+    try:
+        result = chain.invoke({
+            "job": job,
+            "resume": resume,
+            "company_text": company_text if company_text else "Not available"
+        })
 
-    raw = response.content.strip()
+        # Build polished email from email_format if available
+        email_format = result.get("email_format", {})
+        if email_format:
+            lines = [
+                email_format.get("greeting", "").strip(),
+                "",
+                email_format.get("opening", "").strip(),
+                email_format.get("body", "").strip(),
+                "",
+                email_format.get("cta", "").strip(),
+                "",
+                email_format.get("signoff", "").strip(),
+            ]
+            formatted = "\n".join(
+                l for l in lines if l is not None
+            ).strip()
+            if formatted:
+                result["email"] = formatted
 
-    if raw.startswith("```"):
-        parts = raw.split("```")
-        raw = parts[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
-    raw = _escape_control_chars_in_strings(raw)
+        return result
 
-    parsed = json.loads(raw)
-
-    # Compose a polished email when segmented format is provided.
-    email_format = parsed.get("email_format") or {}
-    if email_format:
-        lines = [
-            email_format.get("greeting", "").strip(),
-            "",
-            email_format.get("opening", "").strip(),
-            email_format.get("body", "").strip(),
-            "",
-            email_format.get("cta", "").strip(),
-            "",
-            email_format.get("signoff", "").strip(),
-        ]
-        formatted_email = "\n".join(
-            [line for line in lines if line is not None]
-        ).strip()
-        if formatted_email:
-            parsed["email"] = formatted_email
-
-    return parsed
+    except Exception as e:
+        print(f"[Analyzer] Error: {e}")
+        # Safe fallback — never crash pipeline
+        return {
+            "email": "",
+            "email_format": {},
+            "job_analysis": {
+                "role": "Unknown", "company": "Unknown",
+                "key_skills_required": [], "experience_level": "mid"
+            },
+            "resume_analysis": {
+                "candidate_name": "Candidate",
+                "strongest_skills": [], "experience_years": "0"
+            },
+            "tone_profile": {
+                "formality": "semi-formal",
+                "personality": [], "vocabulary": "mixed"
+            },
+            "match_score": 0,
+            "resume_score": 0,
+            "missing_skills": [],
+            "suggestion_text": "",
+            "tips": []
+        }
