@@ -106,6 +106,8 @@ FOR EACH VARIANT, include "reasoning":
 
 {format_instructions}
 
+{few_shot_context}
+
 JOB DESCRIPTION:
 {job}
 
@@ -115,7 +117,7 @@ CANDIDATE RESUME:
 
 prompt = PromptTemplate(
     template=VARIANTS_TEMPLATE,
-    input_variables=["job", "resume", "tone_profile"],
+    input_variables=["job", "resume", "tone_profile", "few_shot_context"],
     partial_variables={
         "format_instructions": parser.get_format_instructions()
     }
@@ -124,7 +126,7 @@ prompt = PromptTemplate(
 chain = prompt | llm_large | parser
 
 
-def generate_variants(job, resume, tone_profile=None):
+def generate_variants(job, resume, tone_profile=None, few_shot_context=""):
     if not tone_profile:
         tone_profile = {
             "formality": "semi-formal",
@@ -136,7 +138,8 @@ def generate_variants(job, resume, tone_profile=None):
         result = chain.invoke({
             "job": job,
             "resume": resume,
-            "tone_profile": json.dumps(tone_profile)
+            "tone_profile": json.dumps(tone_profile),
+            "few_shot_context": few_shot_context or ""
         })
         return result.get("variants", [])
 
