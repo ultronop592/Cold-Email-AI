@@ -126,6 +126,12 @@ prompt = PromptTemplate(
 chain = prompt | llm_large | parser
 
 
+from app.logger import get_logger
+from services.exceptions import LLMGenerationError
+
+logger = get_logger("variants_generator")
+
+
 async def generate_variants_async(job, resume, tone_profile=None, few_shot_context=""):
     if not tone_profile:
         tone_profile = {
@@ -135,17 +141,20 @@ async def generate_variants_async(job, resume, tone_profile=None, few_shot_conte
         }
 
     try:
+        logger.info("Generating strategy email variants with Groq LLM")
         result = await chain.ainvoke({
             "job": job,
             "resume": resume,
             "tone_profile": json.dumps(tone_profile),
             "few_shot_context": few_shot_context or ""
         })
-        return result.get("variants", [])
+        variants = result.get("variants", [])
+        logger.info("Successfully generated %d email variants", len(variants))
+        return variants
 
     except Exception as e:
-        print(f"[Variants] Async Error: {e}")
-        return []
+        logger.error("Failed to generate email variants: %s", e, exc_info=True)
+        raise LLMGenerationError(f"Email variant generation failed: {e}") from e
 
 
 def generate_variants(job, resume, tone_profile=None, few_shot_context=""):
@@ -157,14 +166,17 @@ def generate_variants(job, resume, tone_profile=None, few_shot_context=""):
         }
 
     try:
+        logger.info("Generating strategy email variants with Groq LLM")
         result = chain.invoke({
             "job": job,
             "resume": resume,
             "tone_profile": json.dumps(tone_profile),
             "few_shot_context": few_shot_context or ""
         })
-        return result.get("variants", [])
+        variants = result.get("variants", [])
+        logger.info("Successfully generated %d email variants", len(variants))
+        return variants
 
     except Exception as e:
-        print(f"[Variants] Error: {e}")
-        return []
+        logger.error("Failed to generate email variants: %s", e, exc_info=True)
+        raise LLMGenerationError(f"Email variant generation failed: {e}") from e

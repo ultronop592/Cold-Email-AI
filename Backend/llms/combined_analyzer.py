@@ -128,21 +128,37 @@ def _fallback_analyzer_result():
     }
 
 
+from app.logger import get_logger
+from services.exceptions import LLMGenerationError
+
+logger = get_logger("combined_analyzer")
+
+
 async def analyze_job_and_resume_async(job, resume, company_text=""):
     try:
+        logger.info("Starting LLM analysis for job fit and primary email")
         result = await chain.ainvoke({
             "job": job,
             "resume": resume,
             "company_text": company_text if company_text else "Not available"
         })
-        return _format_analyzer_result(result)
+        formatted = _format_analyzer_result(result)
+        job_info = formatted.get("job_analysis", {}) if isinstance(formatted, dict) else {}
+        logger.info(
+            "Completed LLM analysis successfully (Role: %s, Company: %s, Match Score: %s)",
+            job_info.get("role", "Unknown"),
+            job_info.get("company", "Unknown"),
+            formatted.get("match_score", 0)
+        )
+        return formatted
     except Exception as e:
-        print(f"[Analyzer] Async Error: {e}")
-        return _fallback_analyzer_result()
+        logger.error("LLM analyzer failed: %s", e, exc_info=True)
+        raise LLMGenerationError(f"AI candidate analysis failed: {e}") from e
 
 
 def analyze_job_and_resume(job, resume, company_text=""):
     try:
+        logger.info("Starting LLM analysis for job fit and primary email")
         result = chain.invoke({
             "job": job,
             "resume": resume,
@@ -150,5 +166,5 @@ def analyze_job_and_resume(job, resume, company_text=""):
         })
         return _format_analyzer_result(result)
     except Exception as e:
-        print(f"[Analyzer] Error: {e}")
-        return _fallback_analyzer_result()
+        logger.error("LLM analyzer failed: %s", e, exc_info=True)
+        raise LLMGenerationError(f"AI candidate analysis failed: {e}") from e

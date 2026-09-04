@@ -2,6 +2,9 @@ import json
 import uuid
 from datetime import datetime
 from db.chroma_client import collection
+from app.logger import get_logger
+
+logger = get_logger("memory_services")
 
 
 def save_to_memory(
@@ -65,11 +68,12 @@ def save_to_memory(
             ids=[record_id]
         )
 
+        logger.info("Saved generation to ChromaDB memory (ID: %s)", record_id)
         return record_id
 
     except Exception as e:
-        # Memory save should never crash the pipeline
-        print(f"[Memory] Save failed silently: {e}")
+        # Memory save is non-blocking to the pipeline, but must be logged
+        logger.warning("Failed to save generation to ChromaDB memory: %s", e, exc_info=True)
         return None
 
 
@@ -112,10 +116,11 @@ def retrieve_similar_jobs(job_description, resume_text, n_results=2):
                 "suggestions": parsed_suggestions
             })
 
+        logger.info("Retrieved %d similar past applications from ChromaDB", len(similar))
         return similar
 
     except Exception as e:
-        print(f"[Memory] Retrieval failed silently: {e}")
+        logger.warning("Failed to query ChromaDB for similar jobs: %s", e, exc_info=True)
         return []
 
 

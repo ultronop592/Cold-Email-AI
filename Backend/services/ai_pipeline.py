@@ -22,14 +22,23 @@ from llms.variants_generator import (
 )
 
 
+import time
+from app.logger import get_logger
+
+logger = get_logger("ai_pipeline")
+
+
 def truncate(text, max_chars=3000):
     """Prevent token overflow by trimming long texts"""
     return text[:max_chars] if len(text) > max_chars else text
 
 
 async def run_pipeline(job_url, resume_file):
+    start_time = time.time()
+    logger.info(">>> Starting Cold Email AI pipeline for job: %s", job_url)
 
     # Step 1: Concurrently scrape job description and company tone page
+    logger.info("[Step 1/7] Scraping job description and company tone page concurrently")
     async with httpx.AsyncClient(headers=REQUEST_HEADERS, timeout=12.0, follow_redirects=True) as http_client:
         job_task = scrape_jobs_async(job_url, client=http_client)
         company_task = scrape_company_page_async(job_url, client=http_client)
@@ -38,13 +47,16 @@ async def run_pipeline(job_url, resume_file):
     job_description = truncate(raw_job_description)
 
     # Step 2: Parse resume - LangChain TextSplitter
+    logger.info("[Step 2/7] Parsing resume PDF and selecting top relevant sections")
     resume_text = get_relevant_resume_text(resume_file=resume_file, job_text=job_description)
 
     # Step 3: Retrieve similar past applications from ChromaDB memory for few-shot guidance
+    logger.info("[Step 3/7] Querying ChromaDB for similar past applications")
     similar_jobs = retrieve_similar_jobs(job_description=job_description, resume_text=resume_text, n_results=2)
     few_shot_context = build_few_shot_context(similar_jobs)
 
     # Step 4: API 1 call - analysis + polished email
+    logger.info("[Step 4/7] Running LLM fit analysis and primary cold email generation")
     analysis = await analyze_job_and_resume_async(
         job=job_description,
         resume=resume_text,
@@ -52,6 +64,7 @@ async def run_pipeline(job_url, resume_file):
     )
 
     # Step 5: API Call 2 - 2 strategy variants with reasoning + few-shot context
+    logger.info("[Step 5/7] Running LLM strategy variants generation")
     variants = await generate_variants_async(
         job=job_description,
         resume=resume_text,
@@ -60,6 +73,7 @@ async def run_pipeline(job_url, resume_file):
     )
 
     # Step 6: Pure Python score computation
+    logger.info("[Step 6/7] Computing scoring metrics (ATS, Match, Resume, Tone)")
     score_dashboard = build_score_dashboard(
         resume_text=resume_text,
         job_text=job_description,
@@ -70,6 +84,7 @@ async def run_pipeline(job_url, resume_file):
     )
 
     # Step 7: Persist current generation to ChromaDB memory
+    logger.info("[Step 7/7] Persisting generation to ChromaDB memory")
     memory_id = save_to_memory(
         job_description=job_description,
         resume_text=resume_text,
@@ -77,6 +92,10 @@ async def run_pipeline(job_url, resume_file):
         analysis=analysis,
         score_dashboard=score_dashboard
     )
+
+    duration = round(time.time() - start_time, 2)
+    logger.info(">>> Pipeline completed successfully in %ss (Overall Score: %s)",
+                duration, score_dashboard.get("overall_score"))
 
     return {
         # Primary polished email
