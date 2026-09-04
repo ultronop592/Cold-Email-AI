@@ -30,8 +30,12 @@ def build_reasoning_summary(analysis, variants, score_dashboard):
             },
             "ats_score": {
                 "score": breakdown.get("ats_score", {}).get("score"),
-                "why": f"Your resume contains {len(breakdown.get('ats_score', {}).get('matched_keywords', []))} of the key job keywords. "
-                       f"Missing: {', '.join(breakdown.get('ats_score', {}).get('missing_keywords', [])[:5])}"
+                "why": (
+                    f"Your resume contains {len(breakdown.get('ats_score', {}).get('matched_keywords', []))} of the key job keywords. "
+                    f"Missing: {', '.join(breakdown.get('ats_score', {}).get('missing_keywords', [])[:5])}."
+                    if breakdown.get("ats_score", {}).get("missing_keywords")
+                    else f"Your resume contains {len(breakdown.get('ats_score', {}).get('matched_keywords', []))} of the key job keywords. All target skills were found in your resume!"
+                )
             },
             "tone_score": {
                 "score": breakdown.get("tone_score", {}).get("score"),

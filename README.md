@@ -144,7 +144,7 @@ Both include a `PipelineLogger` callback that tracks token usage, latency, and e
 | Score | Weight | How It's Calculated |
 |-------|--------|-------------------|
 | **Match Score** | 35% | LLM-assessed fit between resume and job requirements |
-| **ATS Score** | 30% | Keyword overlap between job description and resume (Python regex) |
+| **ATS Score** | 30% | Hybrid canonical skill taxonomy, alias normalization, noise filtering, and LLM-augmented skill fit |
 | **Resume Score** | 20% | LLM-assessed overall resume strength for this role |
 | **Tone Score** | 15% | Checks if generated emails match company tone (formality, vocabulary, phrases) |
 

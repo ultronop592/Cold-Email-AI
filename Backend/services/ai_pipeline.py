@@ -74,13 +74,22 @@ async def run_pipeline(job_url, resume_file):
 
     # Step 6: Pure Python score computation
     logger.info("[Step 6/7] Computing scoring metrics (ATS, Match, Resume, Tone)")
+    job_analysis = analysis.get("job_analysis", {}) if isinstance(analysis, dict) else {}
+    resume_analysis = analysis.get("resume_analysis", {}) if isinstance(analysis, dict) else {}
+    key_skills = job_analysis.get("key_skills_required", []) if isinstance(job_analysis, dict) else []
+    candidate_skills = resume_analysis.get("strongest_skills", []) if isinstance(resume_analysis, dict) else []
+    missing_skills = analysis.get("missing_skills", []) if isinstance(analysis, dict) else []
+
     score_dashboard = build_score_dashboard(
         resume_text=resume_text,
         job_text=job_description,
         tone_profile=analysis.get("tone_profile"),
         variants=variants,
         match_score=analysis.get("match_score", 0),
-        resume_score=analysis.get("resume_score", 0)
+        resume_score=analysis.get("resume_score", 0),
+        key_skills=key_skills,
+        candidate_skills=candidate_skills,
+        missing_skills=missing_skills
     )
 
     # Step 7: Persist current generation to ChromaDB memory
