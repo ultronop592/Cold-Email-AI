@@ -130,10 +130,15 @@ Generates exactly **2 email variants** with distinct strategies:
 
 Each variant includes **AI reasoning**: `why_this_opening` and `key_strength_used`.
 
-### LLM Configuration
-Two separate `ChatGroq` clients are used:
-- `llm` (temp=0.3, 800 tokens) — For analysis (needs precision)
-- `llm_large` (temp=0.7, 1500 tokens) — For email variants (needs creativity)
+### LLM Configuration & Model Routing
+Task-specialized routing using Groq's high-speed inference:
+- **Task 1: Fit Analyzer (`get_analyzer_llm`):** Configured with `temperature=0.2` and `max_tokens=1500` for deterministic extraction, structured JSON fidelity, and zero truncation.
+- **Task 2: Strategy Copywriter (`get_writer_llm`):** Configured with `temperature=0.7` and `max_tokens=2000` for creative, persuasive variants and strategic reasoning.
+- **Automated Fallback Chains (`RunnableWithFallbacks`):** Both chains automatically recover from rate limits (429) or outages using secondary fallback models (e.g. `llama-3.1-8b-instant`).
+- **Configurable Routing Modes (`GROQ_ROUTING_MODE`):**
+  - `quality` (default): `llama-3.3-70b-versatile` for both tasks with 8b fallback.
+  - `balanced`: `llama-3.1-8b-instant` for analysis (sub-second speed), `llama-3.3-70b-versatile` for copywriting.
+  - `fast`: `llama-3.1-8b-instant` for ultra-high throughput.
 
 Both include a `PipelineLogger` callback that tracks token usage, latency, and errors.
 
