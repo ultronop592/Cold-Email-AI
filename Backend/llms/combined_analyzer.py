@@ -81,6 +81,66 @@ prompt = PromptTemplate(
 chain = prompt | llm | parser
 
 
+def _format_analyzer_result(result):
+    if not isinstance(result, dict):
+        return _fallback_analyzer_result()
+    email_format = result.get("email_format", {})
+    if email_format:
+        lines = [
+            email_format.get("greeting", "").strip(),
+            "",
+            email_format.get("opening", "").strip(),
+            email_format.get("body", "").strip(),
+            "",
+            email_format.get("cta", "").strip(),
+            "",
+            email_format.get("signoff", "").strip(),
+        ]
+        formatted = "\n".join(
+            l for l in lines if l is not None
+        ).strip()
+        if formatted:
+            result["email"] = formatted
+    return result
+
+
+def _fallback_analyzer_result():
+    return {
+        "email": "",
+        "email_format": {},
+        "job_analysis": {
+            "role": "Unknown", "company": "Unknown",
+            "key_skills_required": [], "experience_level": "mid"
+        },
+        "resume_analysis": {
+            "candidate_name": "Candidate",
+            "strongest_skills": [], "experience_years": "0"
+        },
+        "tone_profile": {
+            "formality": "semi-formal",
+            "personality": [], "vocabulary": "mixed"
+        },
+        "match_score": 0,
+        "resume_score": 0,
+        "missing_skills": [],
+        "suggestion_text": "",
+        "tips": []
+    }
+
+
+async def analyze_job_and_resume_async(job, resume, company_text=""):
+    try:
+        result = await chain.ainvoke({
+            "job": job,
+            "resume": resume,
+            "company_text": company_text if company_text else "Not available"
+        })
+        return _format_analyzer_result(result)
+    except Exception as e:
+        print(f"[Analyzer] Async Error: {e}")
+        return _fallback_analyzer_result()
+
+
 def analyze_job_and_resume(job, resume, company_text=""):
     try:
         result = chain.invoke({
@@ -88,49 +148,7 @@ def analyze_job_and_resume(job, resume, company_text=""):
             "resume": resume,
             "company_text": company_text if company_text else "Not available"
         })
-
-        # Build polished email from email_format if available
-        email_format = result.get("email_format", {})
-        if email_format:
-            lines = [
-                email_format.get("greeting", "").strip(),
-                "",
-                email_format.get("opening", "").strip(),
-                email_format.get("body", "").strip(),
-                "",
-                email_format.get("cta", "").strip(),
-                "",
-                email_format.get("signoff", "").strip(),
-            ]
-            formatted = "\n".join(
-                l for l in lines if l is not None
-            ).strip()
-            if formatted:
-                result["email"] = formatted
-
-        return result
-
+        return _format_analyzer_result(result)
     except Exception as e:
         print(f"[Analyzer] Error: {e}")
-        # Safe fallback — never crash pipeline
-        return {
-            "email": "",
-            "email_format": {},
-            "job_analysis": {
-                "role": "Unknown", "company": "Unknown",
-                "key_skills_required": [], "experience_level": "mid"
-            },
-            "resume_analysis": {
-                "candidate_name": "Candidate",
-                "strongest_skills": [], "experience_years": "0"
-            },
-            "tone_profile": {
-                "formality": "semi-formal",
-                "personality": [], "vocabulary": "mixed"
-            },
-            "match_score": 0,
-            "resume_score": 0,
-            "missing_skills": [],
-            "suggestion_text": "",
-            "tips": []
-        }
+        return _fallback_analyzer_result()

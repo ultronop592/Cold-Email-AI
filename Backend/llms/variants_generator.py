@@ -126,6 +126,28 @@ prompt = PromptTemplate(
 chain = prompt | llm_large | parser
 
 
+async def generate_variants_async(job, resume, tone_profile=None, few_shot_context=""):
+    if not tone_profile:
+        tone_profile = {
+            "formality": "semi-formal",
+            "personality": ["professional", "friendly"],
+            "vocabulary": "mixed"
+        }
+
+    try:
+        result = await chain.ainvoke({
+            "job": job,
+            "resume": resume,
+            "tone_profile": json.dumps(tone_profile),
+            "few_shot_context": few_shot_context or ""
+        })
+        return result.get("variants", [])
+
+    except Exception as e:
+        print(f"[Variants] Async Error: {e}")
+        return []
+
+
 def generate_variants(job, resume, tone_profile=None, few_shot_context=""):
     if not tone_profile:
         tone_profile = {

@@ -19,7 +19,7 @@ async def generate_email(
     check_rate_limit(client_ip)
 
     try:
-        result = run_pipeline(job_url, resume.file)
+        result = await run_pipeline(job_url, resume.file)
         return result
     except Exception as e:
         tb = traceback.format_exc()
