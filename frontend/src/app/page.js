@@ -231,6 +231,11 @@ export default function Home() {
       return;
     }
 
+    if (resumeFile.size > 5 * 1024 * 1024) {
+      setError("Uploaded resume exceeds 5 MB limit. Please select a smaller PDF file.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("job_url", jobUrl.trim());
     formData.append("resume", resumeFile);

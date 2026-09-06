@@ -17,17 +17,42 @@ app = FastAPI(
 )
 
 # CORS — controls which frontends can call this backend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+allowed_origins = (
+    [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+    if allowed_origins_env
+    else [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "*" 
-    ],
+    ]
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["POST", "GET"],
     allow_headers=["*"]
 )
 
-from routes.generte_email import router
+from routes.generate_email import router
 app.include_router(router)
+
+
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "Cold Email AI Backend",
+        "version": app.version
+    }
+
+
+@app.get("/", tags=["Health"])
+async def root():
+    return {
+        "status": "healthy",
+        "service": "Cold Email AI Backend",
+        "version": app.version,
+        "docs": "/docs"
+    }

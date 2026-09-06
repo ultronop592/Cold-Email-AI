@@ -76,7 +76,7 @@ Cold Email Product/
 │   ├── app/
 │   │   └── main.py                  # FastAPI app setup, CORS, router
 │   ├── routes/
-│   │   └── generte_email.py         # POST /generate-email endpoint
+│   │   └── generate_email.py        # POST /generate-email endpoint
 │   ├── services/
 │   │   ├── ai_pipeline.py           # Orchestrates the full pipeline
 │   │   ├── job_scraper.py           # Multi-job-board scraping (LinkedIn, ATS, JSON-LD)

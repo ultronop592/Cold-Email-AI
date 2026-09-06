@@ -26,6 +26,20 @@ async def generate_email(
     if not resume.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file must be a PDF document.")
 
+    # Validate file size (max 5 MB)
+    resume.file.seek(0, 2)
+    file_size = resume.file.tell()
+    resume.file.seek(0)
+
+    if file_size == 0:
+        raise HTTPException(status_code=400, detail="Uploaded resume file is empty.")
+
+    if file_size > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=413,
+            detail="Uploaded resume exceeds maximum allowed size of 5 MB."
+        )
+
     # Get real client IP — check X-Forwarded-For first (set by Next.js proxy),
     # then fall back to direct connection IP
     forwarded = request.headers.get("x-forwarded-for")
