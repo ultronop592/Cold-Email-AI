@@ -12,39 +12,43 @@ MODEL_70B = "llama-3.3-70b-versatile"
 MODEL_8B = "llama-3.1-8b-instant"
 
 
+from functools import lru_cache
+from app.logger import get_logger
+
+logger = get_logger("groq_client")
+
+
 class PipelineLogger(BaseCallbackHandler):
     """Logs every LLM call — token usage, duration, and errors."""
     def on_llm_start(self, serialized, prompts, **kwargs):
         self._start = time.time()
         prompt_len = sum(len(p) for p in prompts)
         model_name = kwargs.get("invocation_params", {}).get("model_name", "unknown")
-        print(f"\n[LLM] Call started ({model_name}) | Prompt: {prompt_len} chars")
+        logger.info("[LLM] Call started (%s) | Prompt: %d chars", model_name, prompt_len)
 
     def on_llm_end(self, response, **kwargs):
         duration = round(time.time() - self._start, 2)
         usage = response.llm_output.get("token_usage", {}) if response.llm_output else {}
-        print(
-            f"[LLM] Completed in {duration}s | "
-            f"Tokens: {usage.get('total_tokens', '?')} "
-            f"(prompt: {usage.get('prompt_tokens', '?')} "
-            f"completion: {usage.get('completion_tokens', '?')})"
+        logger.info(
+            "[LLM] Completed in %ss | Tokens: %s (prompt: %s completion: %s)",
+            duration,
+            usage.get("total_tokens", "?"),
+            usage.get("prompt_tokens", "?"),
+            usage.get("completion_tokens", "?")
         )
 
     def on_llm_error(self, error, **kwargs):
-        print(f"[LLM] Error encountered: {error}")
+        logger.error("[LLM] Error encountered: %s", error)
 
 
-def resolve_model_routing() -> Dict[str, str]:
-    """
-    Resolve model names based on routing mode and environment variables.
-    
-    Supported GROQ_ROUTING_MODE values:
-    - 'quality' (default): 70B for both tasks, with 8B as fallback
-    - 'balanced': 8B for extraction/analysis (fast, low-TPM), 70B for copywriting
-    - 'fast': 8B for both tasks (sub-second throughput)
-    """
-    mode = os.getenv("GROQ_ROUTING_MODE", "quality").strip().lower()
-
+@lru_cache(maxsize=16)
+def _cached_model_routing(
+    mode: str,
+    legacy_model: str,
+    analyzer_override: str,
+    writer_override: str,
+    fallback_override: str
+) -> Dict[str, str]:
     if mode in ("fast",):
         analyzer_model = MODEL_8B
         writer_model = MODEL_8B
@@ -54,15 +58,16 @@ def resolve_model_routing() -> Dict[str, str]:
         writer_model = MODEL_70B
         fallback_model = MODEL_8B
     else:  # 'quality' / default
-        legacy_model = os.getenv("GROQ_MODEL", MODEL_70B)
         analyzer_model = legacy_model
         writer_model = legacy_model
         fallback_model = MODEL_8B
 
-    # Allow fine-grained environment variable overrides
-    analyzer_model = os.getenv("GROQ_ANALYZER_MODEL", analyzer_model)
-    writer_model = os.getenv("GROQ_WRITER_MODEL", writer_model)
-    fallback_model = os.getenv("GROQ_FALLBACK_MODEL", fallback_model)
+    if analyzer_override:
+        analyzer_model = analyzer_override
+    if writer_override:
+        writer_model = writer_override
+    if fallback_override:
+        fallback_model = fallback_override
 
     return {
         "mode": mode,
@@ -70,6 +75,26 @@ def resolve_model_routing() -> Dict[str, str]:
         "writer_model": writer_model,
         "fallback_model": fallback_model
     }
+
+
+def resolve_model_routing() -> Dict[str, str]:
+    """
+    Resolve model names based on routing mode and environment variables.
+    Results are cached via LRU cache based on the active environment configuration.
+    """
+    mode = os.getenv("GROQ_ROUTING_MODE", "quality").strip().lower()
+    legacy_model = os.getenv("GROQ_MODEL", MODEL_70B)
+    analyzer_override = os.getenv("GROQ_ANALYZER_MODEL", "")
+    writer_override = os.getenv("GROQ_WRITER_MODEL", "")
+    fallback_override = os.getenv("GROQ_FALLBACK_MODEL", "")
+
+    return _cached_model_routing(
+        mode,
+        legacy_model,
+        analyzer_override,
+        writer_override,
+        fallback_override
+    )
 
 
 def create_chat_model(

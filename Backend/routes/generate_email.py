@@ -16,9 +16,16 @@ async def generate_email(
     job_url: str = Form(...),
     resume: UploadFile = File(...)
 ):
-    # Validate inputs
-    if not job_url or not job_url.strip():
+    clean_job_input = (job_url or "").strip()
+    if not clean_job_input:
         raise HTTPException(status_code=400, detail="Job URL or Job Description is required.")
+
+    is_url = clean_job_input.startswith("http://") or clean_job_input.startswith("https://")
+    if not is_url and len(clean_job_input) < 30:
+        raise HTTPException(
+            status_code=400,
+            detail="Provided job description is too short (minimum 30 characters required). If using a link, make sure it starts with http:// or https://."
+        )
 
     if not resume or not resume.filename:
         raise HTTPException(status_code=400, detail="Resume PDF file is required.")

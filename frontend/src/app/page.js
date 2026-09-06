@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Send, FileText, Upload, CheckCircle, ArrowRight, BarChart, Target, Zap, BrainCircuit, Copy, Check, Trophy, Lightbulb, Sparkles } from "lucide-react";
+import { Send, FileText, Upload, CheckCircle, ArrowRight, BarChart, Target, Zap, BrainCircuit, Copy, Check, Trophy, Lightbulb, Sparkles, Link2, AlignLeft } from "lucide-react";
 
 function formatEmail(value) {
   if (value == null) return "AI is ready to draft your email.";
@@ -205,6 +205,7 @@ const pillTags = [
 
 export default function Home() {
   const [jobUrl, setJobUrl] = useState("");
+  const [inputMode, setInputMode] = useState("url");
   const [resumeFile, setResumeFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -226,8 +227,15 @@ export default function Home() {
     setError("");
     setResult(null);
 
-    if (!jobUrl.trim() || !resumeFile) {
-      setError("Please provide a job URL and upload a resume file.");
+    const cleanJob = jobUrl.trim();
+    if (!cleanJob || !resumeFile) {
+      setError("Please provide a job URL or paste a job description, and upload a resume file.");
+      return;
+    }
+
+    const isUrl = cleanJob.startsWith("http://") || cleanJob.startsWith("https://");
+    if (!isUrl && cleanJob.length < 30) {
+      setError("Pasted job description is too short (minimum 30 characters required).");
       return;
     }
 
@@ -310,22 +318,79 @@ export default function Home() {
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-neutral-600">Job Post URL or Description</label>
-                    <span className="text-[10px] text-neutral-400">LinkedIn · Greenhouse · Lever · Direct Text</span>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
-                      <Send size={16} />
+                    <div className="flex items-center gap-1.5 bg-[#E8E2D6]/60 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setInputMode("url")}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                          inputMode === "url"
+                            ? "bg-white text-neutral-900 shadow-sm"
+                            : "text-neutral-600 hover:text-neutral-900"
+                        }`}
+                      >
+                        <Link2 size={13} className={inputMode === "url" ? "text-[#DA7756]" : ""} />
+                        Job URL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setInputMode("text")}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                          inputMode === "text"
+                            ? "bg-white text-neutral-900 shadow-sm"
+                            : "text-neutral-600 hover:text-neutral-900"
+                        }`}
+                      >
+                        <AlignLeft size={13} className={inputMode === "text" ? "text-[#DA7756]" : ""} />
+                        Paste Text
+                      </button>
                     </div>
-                    <input
-                      type="text"
-                      placeholder="https://linkedin.com/jobs/... or paste job description"
-                      value={jobUrl}
-                      onChange={(e) => setJobUrl(e.target.value)}
-                      required
-                      className="w-full pl-10 pr-4 py-3.5 bg-white border border-[#E8E2D6] rounded-xl focus:ring-2 focus:ring-[#DA7756]/40 focus:border-[#DA7756] outline-none transition-all placeholder:text-neutral-400 text-sm shadow-sm"
-                    />
+                    <span className="text-[11px] text-neutral-400">
+                      {inputMode === "url" ? "LinkedIn · Greenhouse · Lever" : "Direct Job Text"}
+                    </span>
                   </div>
+
+                  {inputMode === "url" ? (
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+                        <Send size={16} />
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="https://linkedin.com/jobs/view/... or any job link"
+                        value={jobUrl}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setJobUrl(val);
+                          if (val.includes("\n") || (val.length > 80 && !val.trim().startsWith("http"))) {
+                            setInputMode("text");
+                          }
+                        }}
+                        required
+                        className="w-full pl-10 pr-4 py-3.5 bg-white border border-[#E8E2D6] rounded-xl focus:ring-2 focus:ring-[#DA7756]/40 focus:border-[#DA7756] outline-none transition-all placeholder:text-neutral-400 text-sm shadow-sm font-sans"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <textarea
+                        rows={4}
+                        placeholder="Paste the complete job title, requirements, and responsibilities here..."
+                        value={jobUrl}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setJobUrl(val);
+                          if (!val.includes("\n") && (val.trim().startsWith("http://") || val.trim().startsWith("https://"))) {
+                            setInputMode("url");
+                          }
+                        }}
+                        required
+                        className="w-full p-3.5 bg-white border border-[#E8E2D6] rounded-xl focus:ring-2 focus:ring-[#DA7756]/40 focus:border-[#DA7756] outline-none transition-all placeholder:text-neutral-400 text-sm shadow-sm resize-y leading-relaxed font-sans"
+                      />
+                      <div className="flex justify-between items-center mt-1 text-[10px] text-neutral-400">
+                        <span>Direct text skips web scraper for maximum reliability</span>
+                        <span>{jobUrl.trim().length} chars {jobUrl.trim().length > 0 && jobUrl.trim().length < 30 ? "(min 30)" : ""}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-2">

@@ -27,6 +27,14 @@ Backend/**/__pycache__/
 coverage.xml
 
 # ------------------------------
+# ChromaDB Vector Store
+# ------------------------------
+chroma_db/
+Backend/chroma_db/
+*.sqlite3
+
+
+# ------------------------------
 # Node / Next.js frontend
 # ------------------------------
 frontend/node_modules/

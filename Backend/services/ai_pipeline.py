@@ -33,16 +33,32 @@ def truncate(text, max_chars=3000):
     return text[:max_chars] if len(text) > max_chars else text
 
 
+def is_url(text: str) -> bool:
+    """Check if the provided input string is a valid web URL."""
+    if not text:
+        return False
+    stripped = text.strip()
+    return stripped.startswith("http://") or stripped.startswith("https://")
+
+
 async def run_pipeline(job_url, resume_file):
     start_time = time.time()
-    logger.info(">>> Starting Cold Email AI pipeline for job: %s", job_url)
+    clean_job_input = (job_url or "").strip()
+    input_is_url = is_url(clean_job_input)
 
-    # Step 1: Concurrently scrape job description and company tone page
-    logger.info("[Step 1/7] Scraping job description and company tone page concurrently")
-    async with httpx.AsyncClient(headers=REQUEST_HEADERS, timeout=12.0, follow_redirects=True) as http_client:
-        job_task = scrape_jobs_async(job_url, client=http_client)
-        company_task = scrape_company_page_async(job_url, client=http_client)
-        raw_job_description, company_text = await asyncio.gather(job_task, company_task)
+    # Step 1: Obtain job description and optional company tone page
+    if input_is_url:
+        logger.info(">>> Starting Cold Email AI pipeline for Job URL: %s", clean_job_input)
+        logger.info("[Step 1/7] Scraping job description and company tone page concurrently")
+        async with httpx.AsyncClient(headers=REQUEST_HEADERS, timeout=12.0, follow_redirects=True) as http_client:
+            job_task = scrape_jobs_async(clean_job_input, client=http_client)
+            company_task = scrape_company_page_async(clean_job_input, client=http_client)
+            raw_job_description, company_text = await asyncio.gather(job_task, company_task)
+    else:
+        logger.info(">>> Starting Cold Email AI pipeline for direct Job Description (%d chars)", len(clean_job_input))
+        logger.info("[Step 1/7] Direct job description provided; bypassing web scraper")
+        raw_job_description = await scrape_jobs_async(clean_job_input)
+        company_text = ""
 
     job_description = truncate(raw_job_description)
 

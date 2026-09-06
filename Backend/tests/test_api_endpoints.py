@@ -70,6 +70,23 @@ class TestApiEndpoints(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 413)
         self.assertIn("exceeds maximum allowed size", response.json().get("detail", ""))
+    def test_upload_short_job_text(self):
+        file_content = b"%PDF-1.4 test content"
+        response = client.post(
+            "/generate-email",
+            data={"job_url": "Need Python dev"},  # Less than 30 characters
+            files={"resume": ("test.pdf", io.BytesIO(file_content), "application/pdf")}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("minimum 30 characters required", response.json().get("detail", ""))
+
+    def test_is_url_helper(self):
+        from services.ai_pipeline import is_url
+        self.assertTrue(is_url("https://linkedin.com/jobs/view/123"))
+        self.assertTrue(is_url("http://company.com/careers/lead"))
+        self.assertFalse(is_url("We are seeking a Senior Frontend Engineer with 5+ years of experience..."))
+        self.assertFalse(is_url(""))
+        self.assertFalse(is_url("   "))
 
 
 if __name__ == "__main__":
