@@ -18,7 +18,7 @@ async def generate_email(
 ):
     # Validate inputs
     if not job_url or not job_url.strip():
-        raise HTTPException(status_code=400, detail="Job URL is required.")
+        raise HTTPException(status_code=400, detail="Job URL or Job Description is required.")
 
     if not resume or not resume.filename:
         raise HTTPException(status_code=400, detail="Resume PDF file is required.")

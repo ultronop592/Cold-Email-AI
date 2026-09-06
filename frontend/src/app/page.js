@@ -304,14 +304,17 @@ export default function Home() {
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-neutral-600">Job Post URL</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-neutral-600">Job Post URL or Description</label>
+                    <span className="text-[10px] text-neutral-400">LinkedIn · Greenhouse · Lever · Direct Text</span>
+                  </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                       <Send size={16} />
                     </div>
                     <input
-                      type="url"
-                      placeholder="https://linkedin.com/jobs/..."
+                      type="text"
+                      placeholder="https://linkedin.com/jobs/... or paste job description"
                       value={jobUrl}
                       onChange={(e) => setJobUrl(e.target.value)}
                       required

@@ -27,7 +27,7 @@ The application runs a **multi-stage AI pipeline** that takes a job posting URL 
 
 | Step | Module | What It Does |
 |------|--------|-------------|
-| **1. Scrape Job** | `job_scraper.py` | Fetches job description text from any URL using `requests` + `BeautifulSoup`. Also attempts to scrape company `/about` pages for tone analysis. |
+| **1. Scrape Job** | `job_scraper.py` | Fetches and extracts job descriptions across LinkedIn (guest API), Greenhouse, Lever, Ashby, Workable, Indeed, and company career pages (with Schema.org JSON-LD support). Also supports direct job text pasting and isolates hiring company domains for tone analysis. |
 | **2. Parse Resume** | `resume_parser.py` | Extracts text from PDF using `pdfplumber`. Preserves standard resumes in full with guaranteed contact info retention (email, phone, LinkedIn, GitHub, portfolio). For long CVs, uses smart contextual chunking prioritizing header, skills, and job-relevant sections in chronological order. |
 | **3. Analyze & Write** | `combined_analyzer.py` | **LLM Call 1** — A single structured prompt asks the model to: analyze job-resume fit, score the match, identify missing skills, generate improvement tips, and write one polished cold email. Returns structured JSON via Pydantic schemas. |
 | **4. Generate Variants** | `variants_generator.py` | **LLM Call 2** — Generates exactly 2 strategically different email variants: an **Achievement Lead** (opens with metrics) and a **Problem Solver** (opens with a company challenge). Each variant includes AI reasoning explaining the strategy choice. |
@@ -79,7 +79,7 @@ Cold Email Product/
 │   │   └── generte_email.py         # POST /generate-email endpoint
 │   ├── services/
 │   │   ├── ai_pipeline.py           # Orchestrates the full pipeline
-│   │   ├── job_scraper.py           # Scrapes job + company pages
+│   │   ├── job_scraper.py           # Multi-job-board scraping (LinkedIn, ATS, JSON-LD)
 │   │   ├── resume_parser.py         # PDF parsing + contact-preserving extraction
 │   │   ├── scorer.py                # ATS, tone, match, overall scoring
 │   │   ├── memory_services.py       # ChromaDB save/retrieve
